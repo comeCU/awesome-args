@@ -1,5 +1,6 @@
 package com.comecu.args;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -16,54 +17,56 @@ public class ArgsTest {
     /* ----------- Happy Path start ----------- */
     // Single Option
     // - Bool -l
-    @Test
-    public void should_set_boolean_option_to_true_if_flag_present() {
-        BooleanOption option = Args.parse(BooleanOption.class, "-l");
-
-        assertTrue(option.logging());
-    }
-
-    // 写一个与之相反的测试
-    @Test
-    public void should_set_boolean_option_to_false_if_flag_not_present() {
-        BooleanOption option = Args.parse(BooleanOption.class);
-
-        assertFalse(option.logging());
-    }
-
-    static record BooleanOption(@Option("l") boolean logging) {}
+    // 已经跟BooleanOptionParserTest中的测试重复，不需要了
+//    @Test
+//    public void should_set_boolean_option_to_true_if_flag_present() {
+//        BooleanOption option = Args.parse(BooleanOption.class, "-l");
+//
+//        assertTrue(option.logging());
+//    }
+//
+//    // 写一个与之相反的测试
+//    @Test
+//    public void should_set_boolean_option_to_false_if_flag_not_present() {
+//        BooleanOption option = Args.parse(BooleanOption.class);
+//
+//        assertFalse(option.logging());
+//    }
+//
+//    static record BooleanOption(@Option("l") boolean logging) {}
 
     // - Integer -p 8080
-    @Test
-    public void should_set_int_option_value() {
-        IntOption option = Args.parse(IntOption.class, "-p", "8080");
-
-        assertEquals(8080, option.port());
-    }
-
-    static record IntOption(@Option("p") int port) {}
-
-    // - String -d /usr/logs
-    @Test
-    public void should_get_string_option_value() {
-        StringOption option = Args.parse(StringOption.class, "-d", "/usr/logs");
-
-        assertEquals("/usr/logs", option.directory());
-    }
-
-    static record StringOption(@Option("d") String directory) {}
+    // 已经跟SingleValuedOptionParserTest中的测试重复，不需要了
+//    @Test
+//    public void should_parse_int_as_option_value() {
+//        IntOption option = Args.parse(IntOption.class, "-p", "8080");
+//
+//        assertEquals(8080, option.port());
+//    }
+//
+//    static record IntOption(@Option("p") int port) {}
+//
+//    // - String -d /usr/logs
+//    @Test
+//    public void should_get_string_as_option_value() {
+//        StringOption option = Args.parse(StringOption.class, "-d", "/usr/logs");
+//
+//        assertEquals("/usr/logs", option.directory());
+//    }
+//
+//    static record StringOption(@Option("d") String directory) {}
 
     // Multi Options
     // -l -p 8080 -d /usr/logs
     @Test
     public void should_parse_multi_options() {
-        Options options = Args.parse(Options.class, "-l", "-p", "8080", "-d", "/usr/logs");
+        MultiOptions options = Args.parse(MultiOptions.class, "-l", "-p", "8080", "-d", "/usr/logs");
         assertTrue(options.logging());
         assertEquals(8080, options.port());
         assertEquals("/usr/logs", options.directory());
     }
 
-    static record Options(@Option("l") boolean logging, @Option("p") int port, @Option("d") String directory) {
+    static record MultiOptions(@Option("l") boolean logging, @Option("p") int port, @Option("d") String directory) {
     }
     /* ----------- Happy Path end ----------- */
 
@@ -76,7 +79,15 @@ public class ArgsTest {
     // - int : 0
     // -string ""
 
+    @Test
+    public void should_throw_illegal_option_exception_if_annotation_not_present() {
+        IllegalOptionException e = assertThrows(IllegalOptionException.class, () -> Args.parse(OptionWithoutAnnotation.class, "-l", "-p", "8080", "-d", "/usr/logs"));
 
+        assertEquals("port", e.getParameter());
+    }
+
+    static record OptionWithoutAnnotation(@Option("l") boolean logging, int port, @Option("d") String directory) {
+    }
 
     @Test
     @Disabled
