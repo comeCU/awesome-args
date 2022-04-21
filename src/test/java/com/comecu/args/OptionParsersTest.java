@@ -1,5 +1,6 @@
 package com.comecu.args;
 
+import com.comecu.args.exceptions.IllegalValueException;
 import com.comecu.args.exceptions.InsufficientArgumentsException;
 import com.comecu.args.exceptions.TooManyArgumentsException;
 import org.junit.jupiter.api.Nested;
@@ -20,6 +21,47 @@ import static org.junit.jupiter.api.Assertions.*;
  * @date 2022/4/10 11:02
  */
 public class OptionParsersTest {
+    @Nested
+    class BooleanOptionParser {
+        // sad path:
+        // -bool -l t / -l t f
+        @Test
+        public void should_not_accept_extra_argument_for_boolean_option() {
+            TooManyArgumentsException e = assertThrows(TooManyArgumentsException.class, () -> {
+                OptionParsers.bool().parse(asList("-l", "t"), option("l"));
+            });
+
+            assertEquals("l", e.getOption());
+        }
+
+        // default value
+        // - bool : false
+        @Test
+        public void should_set_default_value_to_false_if_option_not_present() {
+            assertFalse(OptionParsers.bool().parse(asList(), option("l")));
+        }
+
+        // happy path
+        @Test
+        public void should_set_value_to_true_if_option_present() {
+            assertTrue(OptionParsers.bool().parse(asList("-l"), option("l")));
+        }
+
+        static Option option(String value) {
+            return new Option() {
+
+                @Override
+                public Class<? extends Annotation> annotationType() {
+                    return Option.class;
+                }
+
+                @Override
+                public String value() {
+                    return value;
+                }
+            };
+        }
+    }
 
     @Nested
     class UnaryOptionParser {
@@ -89,29 +131,35 @@ public class OptionParsersTest {
     }
 
     @Nested
-    class BooleanOptionParser {
-        // sad path:
-        // -bool -l t / -l t f
+    class ListOptionParser {
+        // -g "this" "is" {"this", "is"}
         @Test
-        public void should_not_accept_extra_argument_for_boolean_option() {
-            TooManyArgumentsException e = assertThrows(TooManyArgumentsException.class, () -> {
-                OptionParsers.bool().parse(asList("-l", "t"), option("l"));
-            });
-
-            assertEquals("l", e.getOption());
+        public void should_parse_list_value() {
+            assertArrayEquals(new String[] {"this", "is"}, OptionParsers.list(String[]::new, String::valueOf).parse(asList("-g", "this", "is"), option("g")));
         }
 
-        // default value
-        // - bool : false
         @Test
-        public void should_set_default_value_to_false_if_option_not_present() {
-            assertFalse(OptionParsers.bool().parse(asList(), option("l")));
+        public void should_not_treat_negative_int_as_flag() {
+            assertArrayEquals(new Integer[] {-1, -2}, OptionParsers.list(Integer[]::new, Integer::parseInt).parse(asList("-g", "-1", "-2"), option("g")));
         }
 
-        // happy path
+        // default value []
         @Test
-        public void should_set_value_to_true_if_option_present() {
-            assertTrue(OptionParsers.bool().parse(asList("-l"), option("l")));
+        public void should_use_empty_array_as_default_value() {
+            String[] value = OptionParsers.list(String[]::new, String::valueOf).parse(asList(), option("g"));
+            assertEquals(0, value.length);
+        }
+
+        // -d a throw exception
+        @Test
+        public void should_throw_exception_if_value_parser_cant_parse_value() {
+            Function<String, String> parser = (it) -> {
+                throw new RuntimeException();
+            };
+            IllegalValueException e = assertThrows(IllegalValueException.class, () ->
+                    OptionParsers.list(String[]::new, parser).parse(asList("-g", "this", "is"), option("g")));
+            assertEquals("g", e.getOption());
+            assertEquals("this", e.getValue());
         }
 
         static Option option(String value) {
