@@ -1,4 +1,4 @@
-package com.comecu.args;
+package com.comecu.args.exceptions;
 
 /**
  * TooManyArgumentsException

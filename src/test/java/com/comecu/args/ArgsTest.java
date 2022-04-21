@@ -1,6 +1,6 @@
 package com.comecu.args;
 
-import org.junit.jupiter.api.Assertions;
+import com.comecu.args.exceptions.IllegalOptionException;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
